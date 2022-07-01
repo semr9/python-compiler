@@ -1,0 +1,7 @@
+a = input()
+b = input()
+x = int(input())
+y = int(input())
+print("a:",a)
+print("b:",b)
+print("c::",x+y)

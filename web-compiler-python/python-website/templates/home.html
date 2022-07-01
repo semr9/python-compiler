@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+
+
+
+{% block content %}
+<h1>Online Python Editor</h1>
+
+<div  class="forms-componentes">
+    <div class="mb-3">
+        <label for="editorCode" class="form-label">Ingresa tu código: </label>
+        <textarea class="form-control" id="editorCode" rows="3"></textarea>
+    </div>
+
+    <button name="executeButton" onclick="getText()">Ejecutar</button>
+
+
+    <div class="mb-3">
+        <label for="output" class="form-label">Salida: </label>
+        <textarea readonly class="form-control" id="output" rows="3"></textarea>
+    </div>
+
+   
+</div>
+
+<div class="container">
+    <div class= "wrap">
+        <h2>Agrega inputs</h2>
+        <a href="#" class="add">&plus;</a>
+    </div>
+    <div class="inp-group">
+
+    </div>
+</div>
+
+
+
+<script src="{{url_for('static',filename='script.js')}}"></script>
+
+
+
+{% endblock %}

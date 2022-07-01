@@ -1,0 +1,79 @@
+vpc-0bcf96e3e76e40833 vpc-eks-test::VPC
+
+subnet-0e4d993390fcaa5c8,subnet-0941efb7068366049 vpc-eks-test::SubnetsPrivate
+
+subnet-0bd0aecb4803f5bfc,subnet-0ac19739dae5a2c9d vpc-eks-test::SubnetsPublic
+
+eks-sebas
+
+////////////////////////////////////////////////////////////////
+
+
+
+1) crea VPN, consola
+2) crear cluster con los subnets
+* eksctl create cluster --name eks-sebas --region us-east-1 --version 1.22 --vpc-private-subnets subnet-0e4d993390fcaa5c8,subnet-0941efb7068366049 --vpc-public-subnets subnet-0bd0aecb4803f5bfc,subnet-0ac19739dae5a2c9d 
+* aws eks describe-cluster --name eks-sebas --query "cluster.identity.oidc.issuer" --output text
+* aws iam list-open-id-connect-providers | grep 31CAD5F3F31CA98CE5FF392448420069
+* eksctl utils associate-iam-oidc-provider --cluster eks-sebas --approve
+3) verify add-ons:
+
+eksctl get addon --name kube-proxy --cluster eks-sebas
+eksctl create addon --name kube-proxy --cluster eks-sebas --force
+
+eksctl get addon --name coredns --cluster eks-sebas 
+eksctl create addon --name coredns --cluster eks-sebas --force
+
+aws eks describe-cluster --name eks-sebas | grep ipFamily
+eksctl create iamserviceaccount --name aws-node --namespace kube-system --cluster eks-sebas --role-name "AmazonEKSVPCCNIRole" --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy --override-existing-serviceaccounts --approve
+kubectl delete pods -n kube-system -l k8s-app=aws-node
+kubectl get pods -n kube-system -l k8s-app=aws-node
+kubectl exec -n kube-system aws-node-9rgzw -c aws-node -- env | grep AWS
+eksctl create addon --name vpc-cni --version v1.11.2-eksbuild.1 --cluster eks-sebas --service-account-role-arn arn:aws:iam::310960868968:role/AmazonEKSVPCCNIRole --force
+eksctl get addon --name vpc-cni --cluster eks-sebas
+
+3) crear load balancer controler adds-on: 
+    *(DONE) curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.2/docs/install/iam_policy.json
+    *(DONE) aws iam create-policy --policy-name AWSLoadBalancerControllerIAMPolicy --policy-document file://iam_policy.json    
+    * Create an IAM role:
+        * eksctl create iamserviceaccount --cluster=eks-sebas --namespace=kube-system --name=aws-load-balancer-controller --role-name "AmazonEKSLoadBalancerControllerRole" --attach-policy-arn=arn:aws:iam::310960868968:policy/AWSLoadBalancerControllerIAMPolicy --approve
+    *(DONE) helm repo add eks https://aws.github.io/eks-charts
+    * helm repo update
+    * helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set region=us-east-1 --set vpcId=vpc-0bcf96e3e76e40833 --set clusterName=eks-sebas --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set image.repository=602401143452.dkr.ecr.us-east-1.amazonaws.com/amazon/aws-load-balancer-controller
+    * kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master"
+    * kubectl get deployment -n kube-system aws-load-balancer-controller
+
+
+
+kubectl apply -f python-compiler-back-end.yaml
+kubectl apply -f python-compiler-front-end.yaml
+
+
+kubectl get ingress/ingress-python-compiler -n python-compiler
+kubectl get ingress -n python-compiler
+kubectl get all --all-namespaces
+
+eksctl delete cluster --name eks-sebas
+
+
+
+(repository)
+5) put image in a private repository with
+
+sudo docker login -u AWS -p $(aws ecr get-login-password  --region us-east-1) 310960868968.dkr.ecr.us-east-1.amazonaws.com
+
+sudo docker tag wilberever100/python-docker:latest public.ecr.aws/g3f3t1z2/front-end:latest
+sudo docker push public.ecr.aws/g3f3t1z2/front-end:latest
+
+310960868968.dkr.ecr.us-east-1.amazonaws.com/front-end:latest
+
+nombre del dns::
+service-python-compiler-back-end
+
+
+public.ecr.aws/g3f3t1z2/front-end:latest
+public.ecr.aws/g3f3t1z2/back-end:latest
+
+
+for x in range(1,10000):
+    print(x)
